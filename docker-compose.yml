@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  db:
+    container_name: next-barcode-pet-postgres
+    image: 'postgres:latest'
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: next-barcode-pet
+  
+  app:
+    depends_on:
+      - db
+    platform: "linux/amd64"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CLIENTVAR: "clientvar"
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    image: t3-app
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
