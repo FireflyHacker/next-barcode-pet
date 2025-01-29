@@ -18,3 +18,13 @@ model Post {
 
     @@index([name])
 }
+
+model Pet {
+    id          Int      @id
+    name        String
+    hunger      Int
+    happiness   Int
+    energy      Int
+    health      Int
+    age         Int
+}
