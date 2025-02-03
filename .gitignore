@@ -52,3 +52,4 @@ yarn-error.log*
 /public/cats
 /public/items
 /public/rooms
+/public/sfx

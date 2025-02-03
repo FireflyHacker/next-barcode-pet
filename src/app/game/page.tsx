@@ -46,6 +46,7 @@ export default function GamePage() {
     energy: 120,
     health: 120,
   });
+  const [shake, setShake] = useState<boolean>(false);
   const [petMood, setPetMood] = useState<keyof typeof petFaces>("idle");
   const [chatMessage, setChatMessage] = useState<string>("");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
@@ -94,6 +95,13 @@ export default function GamePage() {
       ...prev,
       [stat]: Math.max(0, Math.min(120, prev[stat] + amount)), // Clamp between 0 and 120
     }));
+  };
+
+  const kick = () => {
+    updateStat("happiness", -10);
+    new Audio("/sfx/hurt.ogg").play();
+    setShake(true);
+    setTimeout(() => setShake(false), 1000);
   };
 
   /*
@@ -308,7 +316,7 @@ export default function GamePage() {
               </button>
               <button
                 className="w-full py-2 bg-red-500 text-white rounded"
-                onClick={() => updateStat("happiness", -10)}
+                onClick={kick}
               >
                 Kick
               </button>

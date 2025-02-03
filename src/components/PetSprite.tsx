@@ -43,7 +43,6 @@ interface PetSpriteProps {
 
 const PetSprite: React.FC<PetSpriteProps> = ({ animation }) => {
   const [sprite, setSprite] = useState(SPRITE_MAP.idle);
-
   useEffect(() => {
     if (SPRITE_MAP[animation]) {
       setSprite(SPRITE_MAP[animation]);
@@ -69,7 +68,7 @@ const PetSprite: React.FC<PetSpriteProps> = ({ animation }) => {
       }}
     >
       <div
-        className="pet-sprite"
+        className={`pet-sprite`}
         style={
           {
             backgroundPositionY: `-${sprite.row * FRAME_SIZE}px`,
