@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  font-family: "Pixelify Sans", serif;
+  font-optical-sizing: auto;
+  font-weight: 1;
+  font-style: normal;
+}
+
 .pixelify-sans {
   font-family: "Pixelify Sans", serif;
   font-optical-sizing: auto;

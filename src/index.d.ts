@@ -4,3 +4,5 @@ export type PetStats = {
   energy: number;
   health: number;
 };
+
+export type PetStat = keyof PetStats;
