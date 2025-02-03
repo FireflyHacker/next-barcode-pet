@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "prepare": "husky"
   },
   "dependencies": {
