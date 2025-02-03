@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import PetSprite from "../../components/PetSprite";
-import Pet from "../../components/Pet";
+import Pet from "~/components/pet";
+import { PetStats } from "~/index"
+import StatsBar from "~/components/StatsBar";
 
 const petFaces = {
     idle: "(^-^)",         // Neutral happy face
@@ -40,7 +41,7 @@ function isPrefixKey(key: string): key is PrefixKey {
 }
 
 export default function GamePage() {
-    const [stats, setStats] = useState({ hunger: 120, happiness: 120, energy: 120, health: 120});
+    const [stats, setStats] = useState<PetStats>({ hunger: 120, happiness: 120, energy: 120, health: 120});
     const [petMood, setPetMood] = useState<keyof typeof petFaces>("idle");
     const [chatMessage, setChatMessage] = useState<string>("");
     const [scannedCodes, setScannedCodes] = useState<string[]>([]);
@@ -333,22 +334,10 @@ export default function GamePage() {
         )}
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-4 gap-4 w-2/3 mb-6">
-            {Object.entries(stats).map(([key, value]) => (
-            <div key={key} className="flex flex-col items-center w-full mb-2">
-                <p className="text-lg font-bold capitalize">{key}</p>
-                <div className="w-full h-4 bg-gray-300 rounded overflow-hidden">
-                <div
-                    className="h-full bg-green-500 transition-all"
-                    style={{ width: `${value/120*100}%` }}
-                ></div>
-                </div>
-            </div>
-            ))}
-        </div>
+        <StatsBar stats={stats}/>
         
         {/* ASCII Pet */}
-        <PetSprite animation={petMood} />
+        <Pet />
         
         {/* Chat Bubble */}
         {chatMessage && (

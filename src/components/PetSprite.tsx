@@ -59,7 +59,7 @@ const PetSprite: React.FC<PetSpriteProps> = ({ animation }) => {
         backgroundPositionY: `-${sprite.row * FRAME_SIZE}px`,
         animation: `sprite-animate ${sprite.duration}s steps(${sprite.frames}) infinite`,
         "--totalMoveDistance": `-${totalMoveDistance}px`,
-        transform: "scale(4)", // ✅ Scale the entire sprite
+        transform: "scale(4)",
       } as React.CSSProperties}
     />
   </div>

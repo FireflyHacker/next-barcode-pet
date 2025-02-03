@@ -1,5 +1,5 @@
 import { useState } from "react";
-import PetSprite from "./PetSprite";
+import PetSprite from "~/components/petSprite";
 
 const Pet = () => {
   const [animation, setAnimation] = useState<"idle" | "idle2" | "sleep" | "dance" | "talk" | "excited" | "sleepy" | "bored" | "crying" | "box" | "box2" | "box3" | "surprised" | "eating" | "waiting">("idle");
