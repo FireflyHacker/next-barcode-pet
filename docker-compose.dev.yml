@@ -2,14 +2,14 @@ version: "3.9"
 services:
   db:
     container_name: next-barcode-pet-postgres
-    image: 'postgres:latest'
+    image: "postgres:latest"
     ports:
       - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: next-barcode-pet
-  
+
   app:
     depends_on:
       - db
@@ -23,8 +23,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app  # Bind mount for hot reload
-      - /app/node_modules  # Prevents overwriting container node_modules
+      - .:/app # Bind mount for hot reload
+      - /app/node_modules # Prevents overwriting container node_modules
     environment:
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL}
