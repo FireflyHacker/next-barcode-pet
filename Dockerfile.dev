@@ -1,0 +1,27 @@
+##### DEPENDENCIES
+
+FROM --platform=linux/amd64 node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat openssl
+WORKDIR /app
+
+# Install Prisma Client - remove if not using Prisma
+
+COPY prisma ./
+
+# Install dependencies separately for caching
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+RUN \
+    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm install; \
+    elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
+
+# Copy the rest of the app
+COPY . .
+
+EXPOSE 3000
+ENV PORT 3000
+
+# Run in development mode (hot reload)
+CMD ["npm", "run", "dev"]

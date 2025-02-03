@@ -1,0 +1,13 @@
+.pet-sprite {
+    width: 32px;
+    height: 32px;
+    background-image: url('../../public/cats/AllCats.png');
+    background-size: 512px 512px; /* Full sprite sheet */
+    background-repeat: no-repeat;
+  }
+  
+  @keyframes sprite-animate {
+    from { background-position-x: 0px; }
+    to { background-position-x: var(--totalMoveDistance); }  /* Moves left across frames */
+  }
+  
