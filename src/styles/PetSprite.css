@@ -4,6 +4,9 @@
   background-image: url("../../public/cats/AllCats.png");
   background-size: 512px 512px; /* Full sprite sheet */
   background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 
 @keyframes sprite-animate {
