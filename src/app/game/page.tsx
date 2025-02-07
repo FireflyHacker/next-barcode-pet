@@ -2,27 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import Pet from "~/components/pet";
-import { PetStats } from "~/index"
+import { PetStats, PetAnimations } from "~/index"
 import StatsBar from "~/components/StatsBar";
-
-const petFaces = {
-    idle: "(^-^)",         // Neutral happy face
-    idle2: "(◕‿◕)",       // Slightly different happy face
-    sleep: "(-_-)",        // Sleeping face
-    dance: "♪(┌・。・)┌♪", // Dancing with music notes
-    talk: "(^o^)/",       // Talking or waving
-    excited: "(>w<)",      // Excited expression
-    sleepy: "(=_=)",       // Drowsy look
-    bored: "(._.)",        // Neutral, bored look
-    crying: "(T_T)",       // Crying face
-    box: "[ ^_^ ]",       // Inside a box
-    box2: "[ >_< ]",      // Inside a box, but struggling
-    box3: "[ o_o ]",      // Inside a box, surprised
-    surprised: "(O_O)",    // Shocked look
-    eating: "(^～^)",      // Eating happily
-    waiting: "(¬_¬)",      // Impatient, waiting expression
-  };  
+import PetSprite from "~/components/petSprite";
+import PreviousMap_ from "postcss/lib/previous-map";
 
 const prefixes: Record<string, string> = {
     "!": "play",
@@ -42,7 +25,7 @@ function isPrefixKey(key: string): key is PrefixKey {
 
 export default function GamePage() {
     const [stats, setStats] = useState<PetStats>({ hunger: 120, happiness: 120, energy: 120, health: 120});
-    const [petMood, setPetMood] = useState<keyof typeof petFaces>("idle");
+    const [petMood, setPetMood] = useState<PetAnimations>("idle");
     const [chatMessage, setChatMessage] = useState<string>("");
     const [scannedCodes, setScannedCodes] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +38,23 @@ export default function GamePage() {
     const [happinessDecayRate, setHappinessDecayRate] = useState(1 / 8); // ~1 per 8 min
     const [energyRegenRate, setEnergyRegenRate] = useState(1 / 12); // ~1 per 12 min
     const [timeMultiplier, setTimeMultiplier] = useState(1);
+
+    /*
+    * Local Storage
+    */
+
+    // On first load, try to read pet data from localStorage
+    useEffect(() => {
+        const savedStats = localStorage.getItem("stats");
+        if (savedStats) {
+        setStats(JSON.parse(savedStats));
+        }
+    }, []);
+
+    // Whenever petStats changes, save the new state to localStorage
+    useEffect(() => {
+        localStorage.setItem("stats", JSON.stringify(stats));
+    }, [stats]);
 
     /*
     * Calculations for the stats + decay + mood
@@ -75,12 +75,22 @@ export default function GamePage() {
     }, [hungerDecayRate, happinessDecayRate, energyRegenRate, timeMultiplier]);
 
     useEffect(() => {
-        // Determine pet mood based on stats
+        const lowestStat = "hunger";
+        // Handle stat-based moods first
         if (stats.hunger < 30) setPetMood("bored");
         else if (stats.energy < 30) setPetMood("sleepy");
         else if (stats.happiness < 30) setPetMood("crying");
+      
+        // Dance when happiness is max
+        else if (stats.happiness === 120) setPetMood("dance");
+      
+        // Set idle progression states
+        else if (lowestStat === "hunger") setPetMood("waiting");
+        else if (lowestStat === "energy") setPetMood("sleep");
+        else if (lowestStat === "happiness") setPetMood("bored");
         else setPetMood("idle");
-    }, [stats]);
+      
+      }, [stats]);
 
     const updateStat = (stat: keyof typeof stats, amount: number) => {
         setStats((prev) => ({
@@ -88,6 +98,24 @@ export default function GamePage() {
         [stat]: Math.max(0, Math.min(120, prev[stat] + amount)), // Clamp between 0 and 120
         }));
     };
+
+    useEffect(() => {
+        const idleMoods = ["idle", "idle2", "waiting"];
+        let index = 0;
+      
+        const cycleIdleMoods = setInterval(() => {
+          setPetMood((prev) => {
+            // Only cycle if no strong mood is active
+            if (["bored", "sleepy", "crying", "dance", "talk", "eating", "box", "box2", "box3"].includes(prev)) {
+              return prev;
+            }
+            index = (index + 1) % idleMoods.length;
+            return idleMoods[index] as PetAnimations;
+          });
+        }, 60000); // Cycle every 5 seconds
+      
+        return () => clearInterval(cycleIdleMoods);
+      }, []);
 
     /*
     * Action Functions
@@ -140,43 +168,50 @@ export default function GamePage() {
     };
 
     const giveFood = (barcodeLength: number) => {
-        const foodBonus = Math.min(barcodeLength, 5); // Longer food = more full
-        updateStat("hunger", foodBonus)
-    };
-
-    const playWithPet = (barcodeLength: number) => {
-        const energyCost = -(Math.min(barcodeLength, 5)); // Longer play drains more energy
-        const happinessGain = Math.max(2, barcodeLength / 2); // More engagement, more fun
+        const foodBonus = Math.min(barcodeLength, 5);
+        updateStat("hunger", foodBonus);
+        setPetMood("eating");
+        setTimeout(() => setPetMood("idle"), 3000); // Eating animation lasts 3 sec
+      };
+    
+      const playWithPet = (barcodeLength: number) => {
+        const energyCost = -(Math.min(barcodeLength, 5));
+        const happinessGain = Math.max(2, barcodeLength / 2);
         updateStat("energy", energyCost);
-        updateStat("happiness", happinessGain)
-    };
-
-    const giveDrugs = (barcodeLength: number) => {
-        const healthBoost = Math.min(barcodeLength, 10); // More medicine = stronger healing
-        const energyBoost = barcodeLength > 10 ? 5 : 0; // If barcode is long, act like caffeine
+        updateStat("happiness", happinessGain);
+        setTimeout(() => setPetMood(Math.random() > 0.5 ? "excited" : "box"), 3000); // Random excitement or box hiding
+      };
+    
+      const giveDrugs = (barcodeLength: number) => {
+        const healthBoost = Math.min(barcodeLength, 10);
+        const energyBoost = barcodeLength > 10 ? 5 : 0;
         updateStat("energy", energyBoost);
         updateStat("health", healthBoost);
-    };
-
-    const giveAffection = (barcodeLength: number) => {
-        const happinessBoost = Math.max(1, barcodeLength / 5); // Gentle happiness increase
+        setPetMood("surprised"); // Surprised reaction
+      };
+    
+      const giveAffection = (barcodeLength: number) => {
+        const happinessBoost = Math.max(1, barcodeLength / 5);
         updateStat("happiness", happinessBoost);
-    };
-
-    const talkToPet = () => {
-        // This function adds a small amount of happiness and can trigger dialogue events
-        setChatMessage(`Sup?`);
+        setPetMood("idle2");
+      };
+    
+      const talkToPet = () => {
+        setChatMessage("Sup?");
         updateStat("happiness", 2);
-    };
-
-    const triggerGlitch = () => {
-        // Randomized glitch responses; could hint at CTF clues
-        setChatMessage(`H̵̗͙͊͠ẽ̵͍̐l̴̳͋͆ṕ̶̞̕ͅ ̶̡̻̈́̑M̷̹̓̀ê̵̙̲̂`);
-    };
-
-    const triggerCheat = (barcode: string) => {
+        setPetMood("talk");
+        setTimeout(() => setPetMood("idle"), 3000); // Talking animation lasts 3 sec
+      };
+    
+      const triggerGlitch = () => {
+        setChatMessage("H̵̗͙͊͠ẽ̵͍̐l̴̳͋͆ṕ̶̞̕ͅ ̶̡̻̈́̑M̷̹̓̀ê̵̙̲̂");
+        setPetMood("surprised");
+      };
+    
+      const triggerCheat = (barcode: string) => {
         setChatMessage(`Invalid Cheat Code: ${barcode}`);
-    };
+        setPetMood("waiting");
+      };
 
 
     /*
@@ -337,12 +372,14 @@ export default function GamePage() {
         <StatsBar stats={stats}/>
         
         {/* ASCII Pet */}
-        <Pet />
+        <div className="pet-container flex flex-col items-center justify-center h-screen text-center p-6">
+            <PetSprite animation={petMood} />
+        </div>
         
         {/* Chat Bubble */}
         {chatMessage && (
             <motion.div
-            className="bg-gray-200 p-4 rounded-lg mb-4"
+            className="chat-bubble bg-gray-200 p-4 rounded-lg mb-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

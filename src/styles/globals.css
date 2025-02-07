@@ -3,9 +3,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Set a default pet background */
+.pet-container {
+  background-image: url('/rooms/ExampleRoom.png'); /* Adjust the path */
+  background-size: 2048px 2048px;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  width: 100%;
+  height: 100%;
+}
+
+/* Font for the stats text */
 .pixelify-sans {
     font-family: "Pixelify Sans", serif;
     font-optical-sizing: auto;
     font-weight: 1;
     font-style: normal;
   }
+
+/* Set dark mode background and text color */
+body {
+  background-color: #121212; /* Dark background */
+  color: #969696; /* Light text */
+}
+
+/* Chat Bubble */
+.chat-bubble {
+  background-color: #252525;
+  color: #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+}

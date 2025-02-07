@@ -4,3 +4,20 @@ export type PetStats = {
     energy: number, 
     health: number,
 }
+
+export type PetAnimations =
+    | "idle"
+    | "idle2"
+    | "sleep"
+    | "dance"
+    | "talk"
+    | "excited"
+    | "sleepy"
+    | "bored"
+    | "crying"
+    | "box"
+    | "box2"
+    | "box3"
+    | "surprised"
+    | "eating"
+    | "waiting";

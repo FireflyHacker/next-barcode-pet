@@ -1,8 +1,7 @@
 // import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import "../styles/PetSprite.css"; // Import the CSS file
-
-type AnimationType = "idle" | "idle2" | "sleep" | "dance" | "talk" | "excited" | "sleepy" | "bored" | "crying" | "box" | "box2" | "box3" | "surprised" | "eating" | "waiting";
+import { PetAnimations } from "~/index"
 
 const SPRITE_MAP = {
   idle:         { frames: 10, row: 0, duration: 1 },
@@ -23,7 +22,7 @@ const SPRITE_MAP = {
 };
 
 interface PetSpriteProps {
-  animation: AnimationType;
+  animation: PetAnimations;
 }
 
 const PetSprite: React.FC<PetSpriteProps> = ({ animation }) => {

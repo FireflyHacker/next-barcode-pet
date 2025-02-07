@@ -27,8 +27,8 @@ export default function HomePage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
       >
-        <Link href="/game">
-          <a className="px-6 py-3 text-lg rounded-2xl shadow-lg bg-blue-500 text-white hover:bg-blue-600">Start Playing</a>
+        <Link className="px-6 py-3 text-lg rounded-2xl shadow-lg bg-blue-500 text-white hover:bg-blue-600" href="/game">
+          Start Playing
         </Link>
       </motion.div>
     </div>
