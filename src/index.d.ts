@@ -5,6 +5,8 @@ export type PetStats = {
     health: number,
 }
 
+export type PetStat = keyof PetStats;
+
 export type PetAnimations =
     | "idle"
     | "idle2"

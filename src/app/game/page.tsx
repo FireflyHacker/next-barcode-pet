@@ -8,23 +8,24 @@ import PetSprite from "~/components/petSprite";
 import PreviousMap_ from "postcss/lib/previous-map";
 
 const prefixes: Record<string, string> = {
-    "!": "play",
-    "#": "drugs",
-    "*": "affection",
-    "?": "talk",
-    "~": "glitch",
-    "$": "glitch",
-    "/": "cheat"
-}
+  "!": "play",
+  "#": "drugs",
+  "*": "affection",
+  "?": "talk",
+  "~": "glitch",
+  $: "glitch",
+  "/": "cheat",
+};
 
 type PrefixKey = keyof typeof prefixes;
 
 function isPrefixKey(key: string): key is PrefixKey {
-    return key in prefixes;
+  return key in prefixes;
 }
 
 export default function GamePage() {
     const [stats, setStats] = useState<PetStats>({ hunger: 120, happiness: 120, energy: 120, health: 120});
+    const [shake, setShake] = useState<boolean>(false);
     const [petMood, setPetMood] = useState<PetAnimations>("idle");
     const [chatMessage, setChatMessage] = useState<string>("");
     const [scannedCodes, setScannedCodes] = useState<string[]>([]);
@@ -56,23 +57,26 @@ export default function GamePage() {
         localStorage.setItem("stats", JSON.stringify(stats));
     }, [stats]);
 
-    /*
-    * Calculations for the stats + decay + mood
-    */
+  /*
+   * Calculations for the stats + decay + mood
+   */
 
-    // Automatic Stat Decay and Regeneration
-    useEffect(() => {
-        const interval = setInterval(() => {
-        setStats((prev) => ({
-            hunger: Math.max(0, prev.hunger - hungerDecayRate * timeMultiplier),
-            happiness: Math.max(0, prev.happiness - happinessDecayRate * timeMultiplier),
-            energy: Math.min(120, prev.energy + energyRegenRate * timeMultiplier),
-            health: prev.health,
-        }));
-        }, 60000); // Runs every 1 minute
+  // Automatic Stat Decay and Regeneration
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStats((prev) => ({
+        hunger: Math.max(0, prev.hunger - hungerDecayRate * timeMultiplier),
+        happiness: Math.max(
+          0,
+          prev.happiness - happinessDecayRate * timeMultiplier,
+        ),
+        energy: Math.min(120, prev.energy + energyRegenRate * timeMultiplier),
+        health: prev.health,
+      }));
+    }, 60000); // Runs every 1 minute
 
-        return () => clearInterval(interval);
-    }, [hungerDecayRate, happinessDecayRate, energyRegenRate, timeMultiplier]);
+    return () => clearInterval(interval);
+  }, [hungerDecayRate, happinessDecayRate, energyRegenRate, timeMultiplier]);
 
     useEffect(() => {
         const lowestStat = "hunger";
@@ -92,12 +96,19 @@ export default function GamePage() {
       
       }, [stats]);
 
-    const updateStat = (stat: keyof typeof stats, amount: number) => {
-        setStats((prev) => ({
-        ...prev,
-        [stat]: Math.max(0, Math.min(120, prev[stat] + amount)), // Clamp between 0 and 120
-        }));
-    };
+  const updateStat = (stat: keyof typeof stats, amount: number) => {
+    setStats((prev) => ({
+      ...prev,
+      [stat]: Math.max(0, Math.min(120, prev[stat] + amount)), // Clamp between 0 and 120
+    }));
+  };
+
+  const kick = () => {
+    updateStat("happiness", -10);
+    new Audio("/sfx/hurt.ogg").play();
+    setShake(true);
+    setTimeout(() => setShake(false), 1000);
+  };
 
     useEffect(() => {
         const idleMoods = ["idle", "idle2", "waiting"];
@@ -163,9 +174,9 @@ export default function GamePage() {
         prefix = "";
         setScannedCodes((prev) => [receivedData, ...prev.slice(0, 4)]);
 
-        // // Play scan sound effect
-        // new Audio("/scan-sound.mp3").play();
-    };
+    // // Play scan sound effect
+    // new Audio("/scan-sound.mp3").play();
+  };
 
     const giveFood = (barcodeLength: number) => {
         const foodBonus = Math.min(barcodeLength, 5);
@@ -214,159 +225,199 @@ export default function GamePage() {
       };
 
 
-    /*
-    * HID Input (or input from keyboard for testing)
-    */
-    const handleScan = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === "Enter") {
-            const receivedData = enteredText;
-            if (!receivedData) return;
-            
-            processAction(receivedData);
-        }
-    };
+  /*
+   * HID Input (or input from keyboard for testing)
+   */
+  const handleScan = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      const receivedData = enteredText;
+      if (!receivedData) return;
 
-    /*
-    * Serial connection
-    */
-    const connectSerial = async () => {
-        try {
-        if ("serial" in navigator) {
-            const port = await navigator.serial.requestPort(); // Must be triggered by user gesture
-            await port.open({ baudRate: 9600 });
-            setSerialConnected(true);
+      processAction(receivedData);
+    }
+  };
 
-            const reader = port.readable?.getReader();
-            let buf = "";
+  /*
+   * Serial connection
+   */
+  const connectSerial = async () => {
+    try {
+      if ("serial" in navigator) {
+        const port = await navigator.serial.requestPort(); // Must be triggered by user gesture
+        await port.open({ baudRate: 9600 });
+        setSerialConnected(true);
 
-            if (reader) {
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break; // Exit loop when the reader is closed
-        
-                    if (value) {
-                        buf += new TextDecoder().decode(value);
+        const reader = port.readable?.getReader();
+        let buf = "";
 
-                        if (buf.includes("\n") ?? buf.includes("\r")) {
-                            const receivedData = new TextDecoder().decode(value).trim();
-                            buf = "";
+        if (reader) {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break; // Exit loop when the reader is closed
 
-                            if (receivedData) {
-                                processAction(receivedData);
-                            }
-                        }
-                    }
+            if (value) {
+              buf += new TextDecoder().decode(value);
+
+              if (buf.includes("\n") ?? buf.includes("\r")) {
+                const receivedData = new TextDecoder().decode(value).trim();
+                buf = "";
+
+                if (receivedData) {
+                  processAction(receivedData);
                 }
+              }
             }
-        } else {
-            window.alert("ERROR: Web Serial API not supported");
+          }
         }
-        } catch (error) {
-        window.alert(`Error accessing serial port`);
-        }
-    };
+      } else {
+        window.alert("ERROR: Web Serial API not supported");
+      }
+    } catch (error) {
+      window.alert(`Error accessing serial port`);
+    }
+  };
 
-    return (
-        <div className="flex flex-col items-center justify-center h-screen text-center p-6 relative">
-        {/* Cheat Menu Toggle Button */}
-        <button
-            className="absolute top-4 left-4 px-3 py-2 bg-gray-800 text-white rounded"
-            onClick={() => setCheatMenuOpen(true)}
-        >
-            ⚙️ Cheats
-        </button>
+  return (
+    <div className="flex flex-col items-center justify-center h-screen text-center p-6 relative">
+      {/* Cheat Menu Toggle Button */}
+      <button
+        className="absolute top-4 left-4 px-3 py-2 bg-gray-800 text-white rounded"
+        onClick={() => setCheatMenuOpen(true)}
+      >
+        ⚙️ Cheats
+      </button>
 
-        {/* Cheat Menu Sidebar */}
-        {cheatMenuOpen && (
-            <div className="fixed inset-0 z-50">
-            <motion.div
-                initial={{ x: -300 }}
-                animate={{ x: 0 }}
-                exit={{ x: -300 }}
-                className="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white p-4 shadow-lg relative"
+      {/* Cheat Menu Sidebar */}
+      {cheatMenuOpen && (
+        <div className="fixed inset-0 z-50">
+          <motion.div
+            initial={{ x: -300 }}
+            animate={{ x: 0 }}
+            exit={{ x: -300 }}
+            className="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white p-4 shadow-lg relative"
+          >
+            <button
+              className="absolute top-4 right-4 text-xl text-red-500"
+              onClick={() => setCheatMenuOpen(false)}
             >
-                <button
-                className="absolute top-4 right-4 text-xl text-red-500"
-                onClick={() => setCheatMenuOpen(false)}
-                >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-6 h-6 text-red-500 hover:text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={4}
-                >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                </button>
-                <h2 className="text-xl font-bold mb-4">Cheat Menu</h2>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6 text-red-500 hover:text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={4}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h2 className="text-xl font-bold mb-4">Cheat Menu</h2>
 
-                {/* Testing Buttons */}
-                <div className="flex space-x-2 mb-4">
-                    <button className="w-full py-2 bg-blue-500 text-white rounded" onClick={() => updateStat("hunger", 10)}>Feed</button>
-                    <button className="w-full py-2 bg-red-500 text-white rounded" onClick={() => updateStat("hunger", -10)}>UnFeed</button>
-                </div>
-                <div className="flex space-x-2 mb-4">
-                    <button className="w-full py-2 bg-yellow-500 text-white rounded" onClick={() => updateStat("happiness", 10)}>Play</button>
-                    <button className="w-full py-2 bg-red-500 text-white rounded" onClick={() => updateStat("happiness", -10)}>Kick</button>
-                </div>
-                <div className="flex space-x-2 mb-4">
-                    <button className="w-full py-2 bg-purple-500 text-white rounded" onClick={() => updateStat("energy", 10)}>Rest</button>
-                    <button className="w-full py-2 bg-red-500 text-white rounded" onClick={() => {updateStat("energy", -10); updateStat("hunger", -10); updateStat("happiness", 10);}}>Run</button>
-                </div>
-
-                {/* Hunger Decay Rates */}
-                <label>Hunger Decay Rate:</label>
-                <input
-                type="number"
-                value={hungerDecayRate}
-                onChange={(e) => setHungerDecayRate(parseFloat(e.target.value))}
-                className="w-full p-1 text-black mb-2 rounded"
-                />
-                <label>Happiness Decay Rate:</label>
-                <input
-                type="number"
-                value={happinessDecayRate}
-                onChange={(e) => setHappinessDecayRate(parseFloat(e.target.value))}
-                className="w-full p-1 text-black mb-2 rounded"
-                />
-                <label>Energy Regen Rate:</label>
-                <input
-                type="number"
-                value={energyRegenRate}
-                onChange={(e) => setEnergyRegenRate(parseFloat(e.target.value))}
-                className="w-full p-1 text-black mb-2 rounded"
-                />
-                <label>Time Speed Multiplier:</label>
-                <input
-                type="number"
-                value={timeMultiplier}
-                onChange={(e) => setTimeMultiplier(parseFloat(e.target.value))}
-                className="w-full p-1 text-black mb-2 rounded"
-                />
-
-                <label>Barcode Input:</label>
-                {/* Barcode Input */}
-                <input
-                    ref={inputRef}
-                    type="text"
-                    onKeyDown={handleScan}
-                    className="w-full p-1 text-black mb-2 rounded"
-                    value={enteredText}
-                    onChange={(e) => setEnteredText(e.target.value)}
-                />
-
-                {/* Debug Log */}
-                <div className="w-full text-sm bg-black text-white p-2 m-2 rounded">
-                    <p className="font-bold">Scanned Codes:</p>
-                    {scannedCodes.map((code, index) => (
-                    <p key={index}>{code}</p>
-                    ))}
-                </div>
-            </motion.div>
+            {/* Testing Buttons */}
+            <div className="flex space-x-2 mb-4">
+              <button
+                className="w-full py-2 bg-blue-500 text-white rounded"
+                onClick={() => updateStat("hunger", 10)}
+              >
+                Feed
+              </button>
+              <button
+                className="w-full py-2 bg-red-500 text-white rounded"
+                onClick={() => updateStat("hunger", -10)}
+              >
+                UnFeed
+              </button>
             </div>
-        )}
+            <div className="flex space-x-2 mb-4">
+              <button
+                className="w-full py-2 bg-yellow-500 text-white rounded"
+                onClick={() => updateStat("happiness", 10)}
+              >
+                Play
+              </button>
+              <button
+                className="w-full py-2 bg-red-500 text-white rounded"
+                onClick={kick}
+              >
+                Kick
+              </button>
+            </div>
+            <div className="flex space-x-2 mb-4">
+              <button
+                className="w-full py-2 bg-purple-500 text-white rounded"
+                onClick={() => updateStat("energy", 10)}
+              >
+                Rest
+              </button>
+              <button
+                className="w-full py-2 bg-red-500 text-white rounded"
+                onClick={() => {
+                  updateStat("energy", -10);
+                  updateStat("hunger", -10);
+                  updateStat("happiness", 10);
+                }}
+              >
+                Run
+              </button>
+            </div>
+
+            {/* Hunger Decay Rates */}
+            <label>Hunger Decay Rate:</label>
+            <input
+              type="number"
+              value={hungerDecayRate}
+              onChange={(e) => setHungerDecayRate(parseFloat(e.target.value))}
+              className="w-full p-1 text-black mb-2 rounded"
+            />
+            <label>Happiness Decay Rate:</label>
+            <input
+              type="number"
+              value={happinessDecayRate}
+              onChange={(e) =>
+                setHappinessDecayRate(parseFloat(e.target.value))
+              }
+              className="w-full p-1 text-black mb-2 rounded"
+            />
+            <label>Energy Regen Rate:</label>
+            <input
+              type="number"
+              value={energyRegenRate}
+              onChange={(e) => setEnergyRegenRate(parseFloat(e.target.value))}
+              className="w-full p-1 text-black mb-2 rounded"
+            />
+            <label>Time Speed Multiplier:</label>
+            <input
+              type="number"
+              value={timeMultiplier}
+              onChange={(e) => setTimeMultiplier(parseFloat(e.target.value))}
+              className="w-full p-1 text-black mb-2 rounded"
+            />
+
+            <label>Barcode Input:</label>
+            {/* Barcode Input */}
+            <input
+              ref={inputRef}
+              type="text"
+              onKeyDown={handleScan}
+              className="w-full p-1 text-black mb-2 rounded"
+              value={enteredText}
+              onChange={(e) => setEnteredText(e.target.value)}
+            />
+
+            {/* Debug Log */}
+            <div className="w-full text-sm bg-black text-white p-2 m-2 rounded">
+              <p className="font-bold">Scanned Codes:</p>
+              {scannedCodes.map((code, index) => (
+                <p key={index}>{code}</p>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
         {/* Stats Bar */}
         <StatsBar stats={stats}/>
@@ -389,13 +440,13 @@ export default function GamePage() {
             </motion.div>
         )}
 
-        {/* Serial Connection Button */}
-        <button
-            className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
-            onClick={connectSerial}
-        >
-            {serialConnected ? "Serial Connected" : "Connect Barcode Scanner"}
-        </button>
-        </div>
-    );
+      {/* Serial Connection Button */}
+      <button
+        className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
+        onClick={connectSerial}
+      >
+        {serialConnected ? "Serial Connected" : "Connect Barcode Scanner"}
+      </button>
+    </div>
+  );
 }
