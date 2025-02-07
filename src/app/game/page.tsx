@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { PetStats, PetAnimations } from "~/index"
 import StatsBar from "~/components/StatsBar";
 import PetSprite from "~/components/petSprite";
-import PreviousMap_ from "postcss/lib/previous-map";
 
 const prefixes: Record<string, string> = {
   "!": "play",
@@ -117,9 +116,9 @@ export default function GamePage() {
         const cycleIdleMoods = setInterval(() => {
           setPetMood((prev) => {
             // Only cycle if no strong mood is active
-            if (["bored", "sleepy", "crying", "dance", "talk", "eating", "box", "box2", "box3"].includes(prev)) {
-              return prev;
-            }
+            // if (["bored", "sleepy", "crying", "dance", "talk", "eating", "box", "box2", "box3"].includes(prev)) {
+            //   return prev;
+            // }
             index = (index + 1) % idleMoods.length;
             return idleMoods[index] as PetAnimations;
           });
@@ -210,8 +209,7 @@ export default function GamePage() {
       const talkToPet = () => {
         setChatMessage("Sup?");
         updateStat("happiness", 2);
-        setPetMood("talk");
-        setTimeout(() => setPetMood("idle"), 3000); // Talking animation lasts 3 sec
+        setTimeout(() => setPetMood("talk"), 1000); // Talking animation lasts 3 sec
       };
     
       const triggerGlitch = () => {
